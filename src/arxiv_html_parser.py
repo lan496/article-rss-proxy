@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 import logging
-from typing import Dict, Tuple
+from typing import Any
 
 from bs4 import BeautifulSoup
 import requests
 
 
-def _get_arxiv_html_soup(arxiv_id: str) -> Tuple[int, BeautifulSoup]:
+def _get_arxiv_html_soup(arxiv_id: str) -> tuple[int, BeautifulSoup]:
     try:
         resp = requests.get(f"https://arxiv.org/html/{arxiv_id}", timeout=30)
         return resp.status_code, BeautifulSoup(resp.text, "html.parser")
@@ -14,7 +16,7 @@ def _get_arxiv_html_soup(arxiv_id: str) -> Tuple[int, BeautifulSoup]:
         return 500, BeautifulSoup("", "html.parser")
 
 
-def extract_fig1_authors_affils(arxiv_id: str) -> Dict:
+def extract_fig1_authors_affils(arxiv_id: str) -> dict[str, Any]:
     status, soup = _get_arxiv_html_soup(arxiv_id)
     if status != 200:
         return {"fig1": "", "authors": [], "affils": []}
