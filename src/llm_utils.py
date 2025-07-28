@@ -65,9 +65,8 @@ RECOMMEND_PROMPT = """\
 def recommend_batch(papers_batch: list[Paper], wait=True) -> list[bool]:
     papers_batch_str = ""
     for i, paper in enumerate(papers_batch):
-        papers_batch_str += (
-            f"[{i}] {paper.title.replace('\n', ' ')}\nAbstract: {paper.summary}\n----------\n"
-        )
+        title = paper.title.replace("\n", " ")
+        papers_batch_str += f"[{i}] {title}\nAbstract: {paper.summary}\n----------\n"
     interests = Config().interests
     res_batch = ask_gemini(
         RECOMMEND_PROMPT.replace("{INTERESTS}", interests) + papers_batch_str, "gemini-2.5-flash"

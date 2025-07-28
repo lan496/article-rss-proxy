@@ -29,8 +29,8 @@ _INTERESTS = """\
 
 @dataclass
 class Config:
-    title: str = "今日のarXiv-AI4Science"  # TODO: arXiv以外も入るので適切な名前に変える
-    deploy_url: str = "https://hommage-ebi.github.io/article-rss-proxy/"
+    title: str = "lan496/article-rss-proxy/arXiv"
+    deploy_url: str = "https://lan496.github.io/article-rss-proxy/"
     categories: list[str] = field(default_factory=lambda: _CATEGORIES)
     interests: str = _INTERESTS
     translate_ja: bool = False
