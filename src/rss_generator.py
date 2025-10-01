@@ -21,7 +21,12 @@ def generate_rss_file(pushing_papers: list[Paper], other_papers: list[Paper], xm
         fe = fg.add_entry()
         fe.id(p.id)
         fe.title(p.title)
-        fe.link(href=p.link.replace("arxiv.org/abs", "alphaxiv.org/overview"))
+
+        link = p.link
+        if config.redirect_alphaxiv:
+            link = link.replace("arxiv.org/abs", "alphaxiv.org/overview")
+        fe.link(href=link)
+
         fe.pubDate(p.updated)
         fe.description(
             (p.summary_ja if p.summary_ja else p.summary)
@@ -38,7 +43,7 @@ def generate_rss_file(pushing_papers: list[Paper], other_papers: list[Paper], xm
     if other_papers:
         fe = fg.add_entry()
         fe.id(f"other-papers-{TODAY_JST.strftime('%Y-%m-%d')}")
-        fe.title(f"other arxiv papers {TODAY_JST.strftime('%Y-%m-%d')}")
+        fe.title(f"Other arxiv papers {TODAY_JST.strftime('%Y-%m-%d')}")
         fe.link(href=f"https://arxiv.org/{TODAY_JST.strftime('%Y-%m-%d')}")  # dummy
         fe.pubDate(TODAY_JST)
         fe.description(
