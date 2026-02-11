@@ -11,7 +11,7 @@ from joblib import delayed, Parallel
 
 from src.arxiv_fetcher import fetch_papers_for_date
 from src.arxiv_html_parser import extract_fig1_authors_affils
-from src.config import MAX_NJOBS, TODAY_JST, Config
+from src.config import Config, MAX_NJOBS, TODAY_JST
 from src.llm_utils import recommend_papers, translate_abstract
 from src.rss_generator import generate_rss_file
 
@@ -25,7 +25,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--yymmdd", type=str, default=None, help="日付 (YYMMDD)。省略時は今日")
+    parser.add_argument(
+        "--yymmdd", type=str, default=None, help="Date (YYMMDD). Defaults to today"
+    )
     args = parser.parse_args()
 
     if args.yymmdd is not None:

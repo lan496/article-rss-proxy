@@ -7,22 +7,22 @@ from zoneinfo import ZoneInfo
 
 MAX_NJOBS = 8
 
-# for rss gen
+# For RSS generation
 TODAY_JST = datetime.now(ZoneInfo("Asia/Tokyo"))
 
-# for arxiv fetch
+# For arXiv fetch
 _CATEGORIES = [
     "cond-mat.mtrl-sci",
     "physics.comp-ph",
 ]
 
-# for llm
+# For LLM-based paper filtering
 _INTERESTS = """\
-- 対称性の観点から物質の性質を議論する研究
-- 結晶構造探索及び相図を計算的に求める研究
-- 結晶構造の分類に関する研究
-- 固相・液相・気相を問わず、合成可能性・合成レシピを計算化学で設計・予測する研究
-- 計算物質科学分野のOpen-source software
+- Research discussing material properties from the perspective of symmetry
+- Research computationally exploring crystal structures and phase diagrams
+- Research on classification of crystal structures
+- Research using computational chemistry to design/predict synthesizability and synthesis recipes across solid, liquid, and gas phases
+- Open-source software in the computational materials science domain
 \
 """
 

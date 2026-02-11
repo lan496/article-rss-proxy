@@ -68,8 +68,9 @@ class Paper:
 
 def jst_date_to_arxiv_range(date_jst: datetime) -> tuple[str, str]:
     """
-    arXivはJST10:00更新。前日の11:00~今日の11:00の24hの論文を取得するためのstringを返す。
-    火曜日の場合は金曜11:00~
+    arXiv updates at JST 10:00. Return start/end strings to fetch papers from
+    the previous day 11:00 to today 11:00 (24h window).
+    On Tuesday, fetch from Friday 11:00 to cover the weekend.
     """
     date_jst11 = date_jst.replace(hour=11, minute=0, second=0, microsecond=0)
     end_utc = date_jst11.astimezone(timezone.utc)

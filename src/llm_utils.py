@@ -49,15 +49,13 @@ def ask_gemini(prompt: str, model: str) -> str:
 
 
 RECOMMEND_PROMPT = """\
-あなたの役割は論文のタイトルとAbstractを読んで、読者の興味を引くかどうかを判定することです。
+Your role is to read paper titles and abstracts and determine whether they would interest the reader.
 
-読者の関心領域は
+The reader's areas of interest span
 {INTERESTS}
-と多岐にわたります。
 
-以下に論文タイトルとAbstractのペアが複数与えられるのでyes/noで判定してください。返答はjson形式で
+Given the following paper title and abstract pairs, classify each as yes/no. Respond in JSON format like:
 {"0": "yes", "1": "no", ...}
-のようにしてください。
 ----------
 """
 
@@ -94,7 +92,7 @@ def recommend_papers(papers: list[Paper], batch_size: int = 25) -> list[bool]:
 
 def translate_abstract(paper: Paper, wait=True) -> str:
     prompt = (
-        f"以下を日本語に翻訳してください。翻訳結果のみを答えてください。\n"
+        f"Translate the following into Japanese. Reply with only the translation.\n"
         f"---\n{paper.summary}\n---"
     )
     translated = ask_gemini(prompt, "gemini-2.0-flash")
