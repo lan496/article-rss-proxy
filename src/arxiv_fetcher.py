@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from datetime import timedelta, timezone
 import logging
 import re
@@ -10,6 +9,7 @@ import feedparser
 import requests
 
 from src.config import Config
+from src.paper import Paper
 
 
 if TYPE_CHECKING:
@@ -21,49 +21,6 @@ ARXIV_API_URL = (
     "search_query=cat:{cat}+AND+submittedDate:[{start}+TO+{end}]"
     "&start=0&max_results=1000"
 )
-
-
-@dataclass
-class Paper:
-    id: str
-    title: str
-    link: str
-    summary: str
-    category: str
-    updated: str
-    summary_ja: str = ""
-    fig1: str = ""
-    authors: list = field(default_factory=list)
-    affils: list = field(default_factory=list)
-
-    def to_dict(self) -> dict:
-        return {
-            "id": self.id,
-            "title": self.title,
-            "link": self.link,
-            "summary": self.summary,
-            "category": self.category,
-            "updated": self.updated,
-            "summary_ja": self.summary_ja,
-            "fig1": self.fig1,
-            "authors": self.authors,
-            "affils": self.affils,
-        }
-
-    @classmethod
-    def from_dict(cls, d: dict) -> "Paper":
-        return cls(
-            id=d["id"],
-            title=d["title"],
-            link=d["link"],
-            summary=d["summary"],
-            category=d["category"],
-            updated=d["updated"],
-            summary_ja=d.get("summary_ja", ""),
-            fig1=d.get("fig1", ""),
-            authors=d.get("authors", []),
-            affils=d.get("affils", []),
-        )
 
 
 def jst_date_to_arxiv_range(date_jst: datetime) -> tuple[str, str]:

@@ -175,4 +175,4 @@ cython_debug/
 
 .DS_Store
 
-docs/index.xml
+docs/*.xml

@@ -15,7 +15,8 @@ YYMMDD = "250515"
 """
 step1. fetch
 """
-from src.arxiv_fetcher import fetch_papers_for_date, Paper
+from src.arxiv_fetcher import fetch_papers_for_date
+from src.paper import Paper
 
 fetched_papers = fetch_papers_for_date(datetime.strptime(YYMMDD, "%y%m%d").replace(tzinfo=ZoneInfo("Asia/Tokyo")))
 
@@ -56,52 +57,20 @@ for is_recommended, paper in zip(are_recommended, fetched_papers):
 print(len(recommended_papers))
 #%%
 """
-step3. translate
-"""
-from src.llm_utils import translate_abstract
-
-abstract_jas = Parallel(n_jobs=MAX_NJOBS, backend="threading")(
-    delayed(translate_abstract)(paper) for paper in recommended_papers
-)
-
-for abstract_ja, paper in zip(abstract_jas, recommended_papers):
-    paper.summary_ja = abstract_ja
-    print(paper.title)
-    print(f"ja: {abstract_ja}")
-    print("-----")
-
-translated_papers = recommended_papers
-
-#%%
-"""
-step3.5. save and load
-"""
-with open(Path(__file__).parent/f"translated_example_{YYMMDD}.jsonl", "w") as f:
-    for paper in translated_papers:
-        json.dump(paper.to_dict(), f, ensure_ascii=False)
-        f.write("\n")
-
-translated_papers = []
-with open(Path(__file__).parent/f"translated_example_{YYMMDD}.jsonl", "r", encoding="utf-8") as f:
-    for line in f:
-        paper = Paper.from_dict(json.loads(line))
-        translated_papers.append(paper)
-#%%
-"""
 step4. parse
 """
 from src.arxiv_html_parser import extract_fig1_authors_affils
 
 extracted_results = Parallel(n_jobs=MAX_NJOBS, backend="threading")(
-    delayed(extract_fig1_authors_affils)(paper.id) for paper in translated_papers
+    delayed(extract_fig1_authors_affils)(paper.id) for paper in recommended_papers
 )
 
-for extracted, paper in zip(extracted_results, translated_papers):
+for extracted, paper in zip(extracted_results, recommended_papers):
     paper.fig1 = extracted["fig1"]
     paper.authors = extracted["authors"]
     paper.affils = extracted["affils"]
 
-pushing_papers = translated_papers
+pushing_papers = recommended_papers
 #%%
 """
 step5. generate
