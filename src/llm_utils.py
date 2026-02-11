@@ -10,6 +10,7 @@ from joblib import delayed, Parallel
 
 from src.arxiv_fetcher import Paper
 from src.config import Config, MAX_NJOBS
+from src.usage_tracker import tracker
 
 
 load_dotenv()
@@ -28,6 +29,13 @@ def ask_gemini(prompt: str, model: str) -> str:
             res = _client.models.generate_content(
                 model=model, contents=prompt, config={"temperature": 0.0}
             )
+            if res.usage_metadata:
+                tracker.record(
+                    model,
+                    res.usage_metadata.prompt_token_count or 0,
+                    res.usage_metadata.candidates_token_count or 0,
+                    res.usage_metadata.total_token_count or 0,
+                )
             return res.text.strip()
         except google.genai.errors.APIError as e:
             if hasattr(e, "code") and e.code in [429, 500, 502, 503]:

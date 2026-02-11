@@ -14,6 +14,7 @@ from src.arxiv_html_parser import extract_fig1_authors_affils
 from src.config import Config, MAX_NJOBS, TODAY_JST
 from src.llm_utils import recommend_papers, translate_abstract
 from src.rss_generator import generate_rss_file
+from src.usage_tracker import tracker
 
 
 if TYPE_CHECKING:
@@ -74,6 +75,8 @@ def main():
     generate_rss_file(
         recommended_papers, other_papers, Path(__file__).parent.parent / "docs/index.xml"
     )
+
+    tracker.log_summary()
 
 
 if __name__ == "__main__":
