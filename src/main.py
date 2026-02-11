@@ -88,6 +88,13 @@ def main():
     parser.add_argument(
         "--yymmdd", type=str, default=None, help="Date (YYMMDD). Defaults to today"
     )
+    parser.add_argument(
+        "--pipeline",
+        type=str,
+        choices=["arxiv", "aps", "all"],
+        default="all",
+        help="Which pipeline to run (default: all)",
+    )
     args = parser.parse_args()
 
     if args.yymmdd is not None:
@@ -98,8 +105,10 @@ def main():
 
     date_jst = datetime.strptime(yymmdd, "%y%m%d").replace(tzinfo=ZoneInfo("Asia/Tokyo"))
 
-    run_arxiv_pipeline(date_jst)
-    run_aps_pipeline(date_jst)
+    if args.pipeline in ("arxiv", "all"):
+        run_arxiv_pipeline(date_jst)
+    if args.pipeline in ("aps", "all"):
+        run_aps_pipeline(date_jst)
 
     tracker.log_summary()
 

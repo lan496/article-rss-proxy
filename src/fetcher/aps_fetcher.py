@@ -35,9 +35,9 @@ def _parse_abstract(entry: feedparser.FeedParserDict) -> str:
 
 
 def _parse_authors(entry: feedparser.FeedParserDict) -> list[str]:
-    creator = getattr(entry, "dc_creator", None)
-    if creator:
-        return [a.strip() for a in creator.split(",") if a.strip()]
+    author = getattr(entry, "author", None)
+    if author:
+        return [a.strip() for a in author.replace(" and ", ", ").split(",") if a.strip()]
     return []
 
 
@@ -56,7 +56,10 @@ def fetch_aps_papers_for_date(date_jst: datetime) -> list[Paper]:
             continue
 
         for entry in feed.entries:
-            entry_date = str(getattr(entry, "dc_date", None) or getattr(entry, "published", ""))
+            entry_date = str(
+                getattr(entry, "prism_publicationdate", None)
+                or getattr(entry, "updated", "")
+            )
             if not entry_date.startswith(target_date_str):
                 continue
 
@@ -67,7 +70,7 @@ def fetch_aps_papers_for_date(date_jst: datetime) -> list[Paper]:
                 link=entry.get("link", ""),
                 summary=_parse_abstract(entry),
                 authors=_parse_authors(entry),
-                category=getattr(entry, "dc_subject", journal),
+                category=getattr(entry, "prism_section", None) or journal,
                 updated=entry_date,
             )
             papers.append(paper)
