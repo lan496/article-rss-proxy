@@ -10,6 +10,15 @@ on:
         description: '日付 (YYMMDD format, e.g., 250520)'
         required: false
         type: string
+      pipeline:
+        description: 'Pipeline to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - arxiv
+          - aps
 
 jobs:
   build-and-push:
@@ -32,11 +41,14 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
+          ARGS=""
           if [ -n "${{ github.event.inputs.yymmdd }}" ]; then
-            uv run src/main.py --yymmdd "${{ github.event.inputs.yymmdd }}"
-          else
-            uv run src/main.py
+            ARGS="$ARGS --yymmdd ${{ github.event.inputs.yymmdd }}"
           fi
+          if [ -n "${{ github.event.inputs.pipeline }}" ]; then
+            ARGS="$ARGS --pipeline ${{ github.event.inputs.pipeline }}"
+          fi
+          uv run src/main.py $ARGS
 
       # 生成ファイルをコミット
       - name: Commit & push RSS
