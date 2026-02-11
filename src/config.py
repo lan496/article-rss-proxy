@@ -32,7 +32,7 @@ _INTERESTS = """\
 
 @dataclass
 class Config:
-    title: str = "lan496/article-rss-proxy"
+    title: str = "article-rss-proxy"
     deploy_url: str = "https://lan496.github.io/article-rss-proxy/"
     categories: list[str] = field(default_factory=lambda: _CATEGORIES)
     interests: str = _INTERESTS
