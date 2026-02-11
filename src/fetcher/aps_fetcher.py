@@ -41,10 +41,10 @@ def _parse_authors(entry: feedparser.FeedParserDict) -> list[str]:
     return []
 
 
-def fetch_aps_papers_for_date(date_jst: datetime) -> list[Paper]:
+def fetch_aps_papers_for_date(date_jst: datetime) -> dict[str, list[Paper]]:
     config = Config()
     target_date_str = date_jst.strftime("%Y-%m-%d")
-    papers: list[Paper] = []
+    papers_by_journal: dict[str, list[Paper]] = {}
 
     for journal in config.aps_journals:
         url = APS_FEED_URL.format(journal=journal)
@@ -55,15 +55,20 @@ def fetch_aps_papers_for_date(date_jst: datetime) -> list[Paper]:
             logging.error(f"Error fetching APS feed for {journal}: {e}")
             continue
 
+        seen: set[str] = set()
+        journal_papers: list[Paper] = []
         for entry in feed.entries:
             entry_date = str(
-                getattr(entry, "prism_publicationdate", None)
-                or getattr(entry, "updated", "")
+                getattr(entry, "prism_publicationdate", None) or getattr(entry, "updated", "")
             )
             if not entry_date.startswith(target_date_str):
                 continue
 
             paper_id: str = getattr(entry, "prism_doi", None) or entry.get("link", "")
+            if paper_id in seen:
+                continue
+            seen.add(paper_id)
+
             paper = Paper(
                 id=paper_id,
                 title=entry.get("title", "").strip(),
@@ -73,12 +78,9 @@ def fetch_aps_papers_for_date(date_jst: datetime) -> list[Paper]:
                 category=getattr(entry, "prism_section", None) or journal,
                 updated=entry_date,
             )
-            papers.append(paper)
+            journal_papers.append(paper)
 
-    seen: set[str] = set()
-    unique_papers: list[Paper] = []
-    for paper in papers:
-        if paper.id not in seen:
-            unique_papers.append(paper)
-            seen.add(paper.id)
-    return unique_papers
+        if journal_papers:
+            papers_by_journal[journal] = journal_papers
+
+    return papers_by_journal

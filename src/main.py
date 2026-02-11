@@ -65,22 +65,32 @@ def run_arxiv_pipeline(date_jst: datetime) -> None:
 
 
 def run_aps_pipeline(date_jst: datetime) -> None:
-    fetched_papers = fetch_aps_papers_for_date(date_jst)
-    logging.info(f"APS: Fetched {len(fetched_papers)} papers.")
+    papers_by_journal = fetch_aps_papers_for_date(date_jst)
+    total = sum(len(ps) for ps in papers_by_journal.values())
+    logging.info(f"APS: Fetched {total} papers across {len(papers_by_journal)} journals.")
 
-    if not fetched_papers:
+    if not papers_by_journal:
         logging.info("APS: No papers fetched. Skipping.")
         return
 
-    recommended, others = _split_by_recommendation(fetched_papers)
+    # Flatten all papers for a single LLM recommendation pass
+    all_papers = [p for ps in papers_by_journal.values() for p in ps]
+    are_recommended = recommend_papers(all_papers)
+    recommendation_map = {paper.id: rec for paper, rec in zip(all_papers, are_recommended)}
+    logging.info(f"APS: Recommend {sum(are_recommended)} papers.")
 
-    generate_rss_file(
-        recommended,
-        others,
-        DOCS_DIR / "aps.xml",
-        feed_title="lan496/article-rss-proxy/APS",
-        source_label="aps",
-    )
+    # Generate one XML per journal
+    for journal, journal_papers in papers_by_journal.items():
+        recommended = [p for p in journal_papers if recommendation_map[p.id]]
+        others = [p for p in journal_papers if not recommendation_map[p.id]]
+
+        generate_rss_file(
+            recommended,
+            others,
+            DOCS_DIR / f"aps-{journal}.xml",
+            feed_title=f"lan496/article-rss-proxy/APS/{journal}",
+            source_label=f"aps-{journal}",
+        )
 
 
 @click.command()
