@@ -27,7 +27,7 @@ cp .env.example .env
 ```bash
 # Generate the RSS feed
 uv run src/main.py
-# Outputs docs/arxiv.xml
+# Outputs docs/arxiv.xml, docs/aps-prb.xml, docs/aps-prl.xml, etc.
 ```
 
 ## Deploying with GitHub Pages
@@ -39,8 +39,12 @@ uv run src/main.py
    - Branch: gh-pages
    - Folder: /docs
 
-3. Once configured, the RSS feed will be available at:
-   `https://<user>.github.io/article-rss-proxy/arxiv.xml`
+3. Once configured, the RSS feeds will be available at:
+   - `https://<user>.github.io/article-rss-proxy/arxiv.xml`
+   - `https://<user>.github.io/article-rss-proxy/aps-prb.xml`
+   - `https://<user>.github.io/article-rss-proxy/aps-prl.xml`
+   - `https://<user>.github.io/article-rss-proxy/aps-prmaterials.xml`
+   - `https://<user>.github.io/article-rss-proxy/aps-prx.xml`
 
 ## Automatic Updates
 
