@@ -15,7 +15,8 @@ YYMMDD = "250515"
 """
 step1. fetch
 """
-from src.arxiv_fetcher import fetch_papers_for_date, Paper
+from src.arxiv_fetcher import fetch_papers_for_date
+from src.paper import Paper
 
 fetched_papers = fetch_papers_for_date(datetime.strptime(YYMMDD, "%y%m%d").replace(tzinfo=ZoneInfo("Asia/Tokyo")))
 

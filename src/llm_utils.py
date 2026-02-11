@@ -8,8 +8,8 @@ from google import genai
 import google.genai.errors
 from joblib import delayed, Parallel
 
-from src.arxiv_fetcher import Paper
 from src.config import Config, MAX_NJOBS
+from src.paper import Paper
 from src.usage_tracker import tracker
 
 
