@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 
 from joblib import delayed, Parallel
 
+from src.aps_fetcher import fetch_aps_papers_for_date
 from src.arxiv_fetcher import fetch_papers_for_date
 from src.arxiv_html_parser import extract_fig1_authors_affils
 from src.config import MAX_NJOBS, TODAY_JST
@@ -64,6 +65,25 @@ def run_arxiv_pipeline(date_jst: datetime) -> None:
     generate_rss_file(recommended, others, DOCS_DIR / "arxiv.xml")
 
 
+def run_aps_pipeline(date_jst: datetime) -> None:
+    fetched_papers = fetch_aps_papers_for_date(date_jst)
+    logging.info(f"APS: Fetched {len(fetched_papers)} papers.")
+
+    if not fetched_papers:
+        logging.info("APS: No papers fetched. Skipping.")
+        return
+
+    recommended, others = _split_by_recommendation(fetched_papers)
+
+    generate_rss_file(
+        recommended,
+        others,
+        DOCS_DIR / "aps.xml",
+        feed_title="lan496/article-rss-proxy/APS",
+        source_label="aps",
+    )
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -80,6 +100,7 @@ def main():
     date_jst = datetime.strptime(yymmdd, "%y%m%d").replace(tzinfo=ZoneInfo("Asia/Tokyo"))
 
     run_arxiv_pipeline(date_jst)
+    run_aps_pipeline(date_jst)
 
     tracker.log_summary()
 

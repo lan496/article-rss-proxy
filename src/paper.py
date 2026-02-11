@@ -12,8 +12,8 @@ class Paper:
     category: str
     updated: str
     fig1: str = ""
-    authors: list = field(default_factory=list)
-    affils: list = field(default_factory=list)
+    authors: list[str] = field(default_factory=list)
+    affils: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {

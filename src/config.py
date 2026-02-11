@@ -16,6 +16,9 @@ _CATEGORIES = [
     "physics.comp-ph",
 ]
 
+# For APS Physical Review fetch
+_APS_JOURNALS = ["prb"]
+
 # For LLM-based paper filtering
 _INTERESTS = """\
 - Research discussing material properties from the perspective of symmetry
@@ -33,4 +36,5 @@ class Config:
     deploy_url: str = "https://lan496.github.io/article-rss-proxy/"
     categories: list[str] = field(default_factory=lambda: _CATEGORIES)
     interests: str = _INTERESTS
+    aps_journals: list[str] = field(default_factory=lambda: _APS_JOURNALS)
     redirect_alphaxiv: bool = False
