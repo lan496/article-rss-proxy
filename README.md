@@ -39,12 +39,17 @@ uv run src/main.py
    - Branch: gh-pages
    - Folder: /docs
 
-3. Once configured, the RSS feeds will be available at:
-   - `https://<user>.github.io/article-rss-proxy/arxiv.xml`
-   - `https://<user>.github.io/article-rss-proxy/aps-prb.xml`
-   - `https://<user>.github.io/article-rss-proxy/aps-prl.xml`
-   - `https://<user>.github.io/article-rss-proxy/aps-prmaterials.xml`
-   - `https://<user>.github.io/article-rss-proxy/aps-prx.xml`
+3. Once configured, the RSS feeds will be available at the URLs listed below.
+
+## RSS Feed URLs
+
+| Feed | Source | URL |
+|------|--------|-----|
+| arXiv | cond-mat.mtrl-sci, physics.comp-ph | https://lan496.github.io/article-rss-proxy/arxiv.xml |
+| APS PRB | Physical Review B | https://lan496.github.io/article-rss-proxy/aps-prb.xml |
+| APS PRL | Physical Review Letters | https://lan496.github.io/article-rss-proxy/aps-prl.xml |
+| APS PR Materials | Physical Review Materials | https://lan496.github.io/article-rss-proxy/aps-prmaterials.xml |
+| APS PRX | Physical Review X | https://lan496.github.io/article-rss-proxy/aps-prx.xml |
 
 ## Automatic Updates
 
