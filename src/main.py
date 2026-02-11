@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import argparse
 from datetime import datetime
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
+import click
 from joblib import delayed, Parallel
 
 from src.arxiv_html_parser import extract_fig1_authors_affils
@@ -83,31 +83,24 @@ def run_aps_pipeline(date_jst: datetime) -> None:
     )
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--yymmdd", type=str, default=None, help="Date (YYMMDD). Defaults to today"
-    )
-    parser.add_argument(
-        "--pipeline",
-        type=str,
-        choices=["arxiv", "aps", "all"],
-        default="all",
-        help="Which pipeline to run (default: all)",
-    )
-    args = parser.parse_args()
-
-    if args.yymmdd is not None:
-        yymmdd = args.yymmdd
-    else:
+@click.command()
+@click.option("--yymmdd", default=None, help="Date (YYMMDD). Defaults to today.")
+@click.option(
+    "--pipeline",
+    type=click.Choice(["arxiv", "aps", "all"]),
+    default="all",
+    help="Which pipeline to run (default: all).",
+)
+def main(yymmdd: str | None, pipeline: str):
+    if yymmdd is None:
         yymmdd = TODAY_JST.strftime("%y%m%d")
         logging.info(f"yymmdd is not specified. Using today: {yymmdd}")
 
     date_jst = datetime.strptime(yymmdd, "%y%m%d").replace(tzinfo=ZoneInfo("Asia/Tokyo"))
 
-    if args.pipeline in ("arxiv", "all"):
+    if pipeline in ("arxiv", "all"):
         run_arxiv_pipeline(date_jst)
-    if args.pipeline in ("aps", "all"):
+    if pipeline in ("aps", "all"):
         run_aps_pipeline(date_jst)
 
     tracker.log_summary()
