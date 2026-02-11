@@ -12,7 +12,7 @@ article-rss-proxy is a Python tool that creates personalized arXiv RSS feeds. It
 # Install dependencies
 uv sync
 
-# Run the pipeline (generates docs/index.xml)
+# Run the pipeline (generates docs/arxiv.xml)
 uv run src/main.py
 uv run src/main.py --yymmdd 250515   # specific date in YYMMDD format
 
@@ -46,6 +46,6 @@ The `Paper` dataclass (`arxiv_fetcher.py`) flows through all stages, accumulatin
 - **Secrets**: `GEMINI_API_KEY` loaded from `.env` via python-dotenv
 - **Rate limiting**: 60-second waits between Gemini API batches; exponential backoff on 429/5xx errors (up to 10 retries)
 - **Parallelism**: joblib with `MAX_NJOBS=8` for translation and HTML parsing
-- **Output**: `docs/index.xml` (gitignored; deployed to `gh-pages` branch by CI)
+- **Output**: `docs/arxiv.xml` (gitignored; deployed to `gh-pages` branch by CI)
 - **CI**: GitHub Actions runs daily at 02:17 UTC (11:17 JST), commits output to `gh-pages` branch
 - **No test suite**: The project currently has no automated tests

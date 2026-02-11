@@ -27,7 +27,7 @@ cp .env.example .env
 ```bash
 # Generate the RSS feed
 uv run src/main.py
-# Outputs docs/index.xml
+# Outputs docs/arxiv.xml
 ```
 
 ## Deploying with GitHub Pages
@@ -40,7 +40,7 @@ uv run src/main.py
    - Folder: /docs
 
 3. Once configured, the RSS feed will be available at:
-   `https://<user>.github.io/article-rss-proxy/index.xml`
+   `https://<user>.github.io/article-rss-proxy/arxiv.xml`
 
 ## Automatic Updates
 
