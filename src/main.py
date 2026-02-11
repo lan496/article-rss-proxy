@@ -9,10 +9,9 @@ from zoneinfo import ZoneInfo
 
 from joblib import delayed, Parallel
 
-from src.aps_fetcher import fetch_aps_papers_for_date
-from src.arxiv_fetcher import fetch_papers_for_date
 from src.arxiv_html_parser import extract_fig1_authors_affils
 from src.config import MAX_NJOBS, TODAY_JST
+from src.fetcher import fetch_aps_papers_for_date, fetch_papers_for_date
 from src.llm_utils import recommend_papers
 from src.rss_generator import generate_rss_file
 from src.usage_tracker import tracker
