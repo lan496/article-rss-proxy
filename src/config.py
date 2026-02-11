@@ -37,4 +37,3 @@ class Config:
     categories: list[str] = field(default_factory=lambda: _CATEGORIES)
     interests: str = _INTERESTS
     aps_journals: list[str] = field(default_factory=lambda: _APS_JOURNALS)
-    redirect_alphaxiv: bool = False

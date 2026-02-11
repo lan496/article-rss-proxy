@@ -28,10 +28,7 @@ def generate_rss_file(
         fe.id(p.id)
         fe.title(p.title)
 
-        link = p.link
-        if source_label == "arxiv" and config.redirect_alphaxiv:
-            link = link.replace("arxiv.org/abs", "alphaxiv.org/overview")
-        fe.link(href=link)
+        fe.link(href=p.link)
 
         fe.pubDate(p.updated)
 

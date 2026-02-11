@@ -37,7 +37,7 @@ The pipeline runs sequentially through five stages, orchestrated by `src/main.py
 4. **Parse HTML** (`arxiv_html_parser.py`): Scrapes arXiv HTML pages to extract first figure, author names, and affiliations using BeautifulSoup CSS selectors (`.ltx_personname`, `.ltx_contact`). Runs in parallel via joblib.
 5. **Generate RSS** (`rss_generator.py`): Produces an Atom/RSS feed with recommended papers as full entries and remaining papers collated into a single linked list entry.
 
-The `Paper` dataclass (`arxiv_fetcher.py`) flows through all stages, accumulating fields (summary_ja, fig1, authors, affils). `Config` (`config.py`) centralizes all user preferences: arXiv categories, research interests prompt, translation toggle, and alphaxiv redirect.
+The `Paper` dataclass (`arxiv_fetcher.py`) flows through all stages, accumulating fields (summary_ja, fig1, authors, affils). `Config` (`config.py`) centralizes all user preferences: arXiv categories, research interests prompt, and translation toggle.
 
 ## Key Details
 
