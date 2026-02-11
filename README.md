@@ -1,13 +1,13 @@
 # article-rss-proxy
 
-A tool that fetches papers from arXiv, filters and translates them using Gemini, and distributes them as an RSS feed.
+A tool that fetches papers from arXiv and APS (American Physical Society) journals, filters them by research interests using Gemini, and distributes them as RSS feeds.
 
 ## Features
 
-- Fetch papers from specified arXiv categories via the arXiv API
+- Fetch papers from arXiv categories and APS Physical Review journals (PRB, PRL, PR Materials, PRX)
 - Filter papers by research interests using the Gemini API
-- Extract figures, authors, and affiliations from papers
-- Distribute as an RSS feed (GitHub Pages)
+- Extract figures, authors, and affiliations from arXiv papers
+- Generate per-source RSS feeds (GitHub Pages)
 - Automatic daily updates via GitHub Actions (11:17 JST)
 
 ## Setup
@@ -25,9 +25,13 @@ cp .env.example .env
 ## Usage
 
 ```bash
-# Generate the RSS feed
+# Generate all RSS feeds
 uv run src/main.py
 # Outputs docs/arxiv.xml, docs/aps-prb.xml, docs/aps-prl.xml, etc.
+
+# Run a specific pipeline only
+uv run src/main.py --pipeline arxiv
+uv run src/main.py --pipeline aps
 ```
 
 ## Deploying with GitHub Pages
