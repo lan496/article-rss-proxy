@@ -29,7 +29,7 @@ def generate_rss_file(pushing_papers: list[Paper], other_papers: list[Paper], xm
 
         fe.pubDate(p.updated)
         fe.description(
-            (p.summary_ja if p.summary_ja else p.summary)
+            p.summary
             + "\n\n"
             + f'<img src="{p.fig1}"/>'
             + "<p>"

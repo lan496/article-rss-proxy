@@ -22,7 +22,6 @@ def ask_gemini(prompt: str, model: str) -> str:
     model:
     - gemini-2.5-pro: 5RPM 100RPD
     - gemini-2.5-flash: 10RPM 250RPD
-    - gemini-2.0-flash: 15RPM 200RPD
     """
     for _ in range(10):
         try:
@@ -96,14 +95,3 @@ def recommend_papers(papers: list[Paper], batch_size: int = 25) -> list[bool]:
         delayed(recommend_batch)(_get_batch(i)) for i in range(n_batches)
     )
     return sum(res, [])
-
-
-def translate_abstract(paper: Paper, wait=True) -> str:
-    prompt = (
-        f"Translate the following into Japanese. Reply with only the translation.\n"
-        f"---\n{paper.summary}\n---"
-    )
-    translated = ask_gemini(prompt, "gemini-2.0-flash")
-    if wait:
-        time.sleep(60)
-    return translated

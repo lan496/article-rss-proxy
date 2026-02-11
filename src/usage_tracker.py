@@ -8,7 +8,6 @@ import threading
 FREE_TIER_RPD: dict[str, int] = {
     "gemini-2.5-pro": 100,
     "gemini-2.5-flash": 250,
-    "gemini-2.0-flash": 200,
 }
 
 

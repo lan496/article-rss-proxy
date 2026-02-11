@@ -31,7 +31,6 @@ class Paper:
     summary: str
     category: str
     updated: str
-    summary_ja: str = ""
     fig1: str = ""
     authors: list = field(default_factory=list)
     affils: list = field(default_factory=list)
@@ -44,7 +43,6 @@ class Paper:
             "summary": self.summary,
             "category": self.category,
             "updated": self.updated,
-            "summary_ja": self.summary_ja,
             "fig1": self.fig1,
             "authors": self.authors,
             "affils": self.affils,
@@ -59,7 +57,6 @@ class Paper:
             summary=d["summary"],
             category=d["category"],
             updated=d["updated"],
-            summary_ja=d.get("summary_ja", ""),
             fig1=d.get("fig1", ""),
             authors=d.get("authors", []),
             affils=d.get("affils", []),

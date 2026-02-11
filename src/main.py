@@ -11,8 +11,8 @@ from joblib import delayed, Parallel
 
 from src.arxiv_fetcher import fetch_papers_for_date
 from src.arxiv_html_parser import extract_fig1_authors_affils
-from src.config import Config, MAX_NJOBS, TODAY_JST
-from src.llm_utils import recommend_papers, translate_abstract
+from src.config import MAX_NJOBS, TODAY_JST
+from src.llm_utils import recommend_papers
 from src.rss_generator import generate_rss_file
 from src.usage_tracker import tracker
 
@@ -51,17 +51,6 @@ def main():
         else:
             other_papers.append(paper)
     logging.info(f"Recommend {len(recommended_papers)} papers.")
-
-    config = Config()
-    if config.translate_ja:
-        abstract_jas = Parallel(n_jobs=MAX_NJOBS, backend="threading")(
-            delayed(translate_abstract)(paper) for paper in recommended_papers
-        )
-        for abstract_ja, paper in zip(abstract_jas, recommended_papers):
-            paper.summary_ja = abstract_ja
-        logging.info("Translate Done.")
-    else:
-        logging.info("Skip translation.")
 
     extracted_results = Parallel(n_jobs=MAX_NJOBS, backend="threading")(
         delayed(extract_fig1_authors_affils)(paper.id) for paper in recommended_papers
