@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 import logging
-from typing import TYPE_CHECKING
 
 from bs4 import BeautifulSoup
 import feedparser
@@ -10,9 +10,6 @@ import requests
 from src.config import Config
 from src.paper import Paper
 
-
-if TYPE_CHECKING:
-    from datetime import datetime
 
 APS_FEED_URL = "https://feeds.aps.org/rss/recent/{journal}.xml"
 
@@ -43,7 +40,6 @@ def _parse_authors(entry: feedparser.FeedParserDict) -> list[str]:
 
 def fetch_aps_papers_for_date(date_jst: datetime) -> dict[str, list[Paper]]:
     config = Config()
-    target_date_str = date_jst.strftime("%Y-%m-%d")
     papers_by_journal: dict[str, list[Paper]] = {}
 
     for journal in config.aps_journals:
@@ -61,7 +57,12 @@ def fetch_aps_papers_for_date(date_jst: datetime) -> dict[str, list[Paper]]:
             entry_date = str(
                 getattr(entry, "prism_publicationdate", None) or getattr(entry, "updated", "")
             )
-            if not entry_date.startswith(target_date_str):
+            try:
+                parsed_date = datetime.fromisoformat(entry_date)
+            except (ValueError, TypeError):
+                logging.warning(f"Skipping entry with malformed date: {entry_date}")
+                continue
+            if abs(date_jst - parsed_date) > timedelta(hours=24):
                 continue
 
             paper_id: str = getattr(entry, "prism_doi", None) or entry.get("link", "")
