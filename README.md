@@ -1,5 +1,7 @@
 # article-rss-proxy
 
+[![Daily RSS update](https://github.com/lan496/article-rss-proxy/actions/workflows/arxiv_rss.yml/badge.svg)](https://github.com/lan496/article-rss-proxy/actions/workflows/arxiv_rss.yml)
+
 A tool that fetches papers from arXiv and APS (American Physical Society) journals, filters them by research interests using Gemini, and distributes them as RSS feeds.
 
 ## Features
