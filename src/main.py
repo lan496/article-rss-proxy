@@ -10,7 +10,7 @@ import click
 from joblib import delayed, Parallel
 
 from src.arxiv_html_parser import extract_fig1_authors_affils
-from src.config import MAX_NJOBS, TODAY_JST
+from src.config import Config, MAX_NJOBS, TODAY_JST
 from src.fetcher import fetch_aps_papers_for_date, fetch_papers_for_date
 from src.llm_utils import recommend_papers
 from src.rss_generator import generate_rss_file
@@ -55,7 +55,8 @@ def run_arxiv_pipeline(date_jst: datetime) -> None:
     logging.info(f"Fetched {len(fetched_papers)} papers.")
 
     if not fetched_papers:
-        logging.info("arXiv: No papers fetched. Skipping.")
+        logging.info("arXiv: No papers fetched. Writing empty feed.")
+        generate_rss_file([], [], DOCS_DIR / "arxiv.xml")
         return
 
     recommended, others = _split_by_recommendation(fetched_papers)
@@ -70,7 +71,15 @@ def run_aps_pipeline(date_jst: datetime) -> None:
     logging.info(f"APS: Fetched {total} papers across {len(papers_by_journal)} journals.")
 
     if not papers_by_journal:
-        logging.info("APS: No papers fetched. Skipping.")
+        logging.info("APS: No papers fetched. Writing empty feeds.")
+        for journal in Config().aps_journals:
+            generate_rss_file(
+                [],
+                [],
+                DOCS_DIR / f"aps-{journal}.xml",
+                feed_title=f"lan496/article-rss-proxy/APS/{journal}",
+                source_label=f"aps-{journal}",
+            )
         return
 
     # Flatten all papers for a single LLM recommendation pass
@@ -91,6 +100,17 @@ def run_aps_pipeline(date_jst: datetime) -> None:
             feed_title=f"lan496/article-rss-proxy/APS/{journal}",
             source_label=f"aps-{journal}",
         )
+
+    # Write empty feeds for configured journals with no fetched papers
+    for journal in Config().aps_journals:
+        if journal not in papers_by_journal:
+            generate_rss_file(
+                [],
+                [],
+                DOCS_DIR / f"aps-{journal}.xml",
+                feed_title=f"lan496/article-rss-proxy/APS/{journal}",
+                source_label=f"aps-{journal}",
+            )
 
 
 @click.command()
