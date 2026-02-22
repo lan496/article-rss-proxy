@@ -19,6 +19,7 @@ on:
           - all
           - arxiv
           - aps
+          - nature
 
 jobs:
   build-and-push:

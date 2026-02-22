@@ -11,7 +11,11 @@ from joblib import delayed, Parallel
 
 from src.arxiv_html_parser import extract_fig1_authors_affils
 from src.config import Config, FEED_FAVICONS, MAX_NJOBS, TODAY_JST
-from src.fetcher import fetch_aps_papers_for_date, fetch_papers_for_date
+from src.fetcher import (
+    fetch_aps_papers_for_date,
+    fetch_nature_papers_for_date,
+    fetch_papers_for_date,
+)
 from src.llm_utils import recommend_papers
 from src.rss_generator import generate_rss_file
 from src.usage_tracker import tracker
@@ -118,11 +122,62 @@ def run_aps_pipeline(date_jst: datetime) -> None:
             )
 
 
+def run_nature_pipeline(date_jst: datetime) -> None:
+    papers_by_journal = fetch_nature_papers_for_date(date_jst)
+    total = sum(len(ps) for ps in papers_by_journal.values())
+    logging.info(f"Nature: Fetched {total} papers across {len(papers_by_journal)} journals.")
+
+    if not papers_by_journal:
+        logging.info("Nature: No papers fetched. Writing empty feeds.")
+        for journal in Config().nature_journals:
+            generate_rss_file(
+                [],
+                [],
+                DOCS_DIR / f"nature-{journal}.xml",
+                feed_title=f"lan496/article-rss-proxy/Nature/{journal}",
+                source_label=f"nature-{journal}",
+                favicon_url=FEED_FAVICONS["nature"],
+            )
+        return
+
+    # Flatten all papers for a single LLM recommendation pass
+    all_papers = [p for ps in papers_by_journal.values() for p in ps]
+    are_recommended = recommend_papers(all_papers)
+    recommendation_map = {paper.id: rec for paper, rec in zip(all_papers, are_recommended)}
+    logging.info(f"Nature: Recommend {sum(are_recommended)} papers.")
+
+    # Generate one XML per journal
+    for journal, journal_papers in papers_by_journal.items():
+        recommended = [p for p in journal_papers if recommendation_map[p.id]]
+        others = [p for p in journal_papers if not recommendation_map[p.id]]
+
+        generate_rss_file(
+            recommended,
+            others,
+            DOCS_DIR / f"nature-{journal}.xml",
+            feed_title=f"lan496/article-rss-proxy/Nature/{journal}",
+            source_label=f"nature-{journal}",
+            favicon_url=FEED_FAVICONS["nature"],
+        )
+
+    # Write empty feeds for configured journals with no fetched papers
+    for journal in Config().nature_journals:
+        if journal not in papers_by_journal:
+            generate_rss_file(
+                [],
+                [],
+                DOCS_DIR / f"nature-{journal}.xml",
+                feed_title=f"lan496/article-rss-proxy/Nature/{journal}",
+                source_label=f"nature-{journal}",
+                favicon_url=FEED_FAVICONS["nature"],
+            )
+
+
 @click.command()
 @click.option("--yymmdd", default=None, help="Date (YYMMDD). Defaults to today.")
 @click.option(
     "--pipeline",
-    type=click.Choice(["arxiv", "aps", "all"]),
+    type=click.Choice(["arxiv", "aps", "nature", "all"]),
     default="all",
     help="Which pipeline to run (default: all).",
 )
@@ -137,6 +192,8 @@ def main(yymmdd: str | None, pipeline: str):
         run_arxiv_pipeline(date_jst)
     if pipeline in ("aps", "all"):
         run_aps_pipeline(date_jst)
+    if pipeline in ("nature", "all"):
+        run_nature_pipeline(date_jst)
 
     tracker.log_summary()
 

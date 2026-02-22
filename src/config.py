@@ -10,6 +10,7 @@ MAX_NJOBS = 8
 FEED_FAVICONS: dict[str, str] = {
     "arxiv": "https://arxiv.org/favicon.ico",
     "aps": "https://cdn.journals.aps.org/development/journals/images/favicon.ico",
+    "nature": "https://www.nature.com/uploads/product/npjcompumats/rss.png",
 }
 
 # For RSS generation
@@ -23,6 +24,9 @@ _CATEGORIES = [
 
 # For APS Physical Review fetch
 _APS_JOURNALS = ["prb", "prl", "prmaterials", "prx"]
+
+# For Nature journal fetch
+_NATURE_JOURNALS = ["npjcompumats"]
 
 # For LLM-based paper filtering
 _INTERESTS = """\
@@ -42,3 +46,4 @@ class Config:
     categories: list[str] = field(default_factory=lambda: _CATEGORIES)
     interests: str = _INTERESTS
     aps_journals: list[str] = field(default_factory=lambda: _APS_JOURNALS)
+    nature_journals: list[str] = field(default_factory=lambda: _NATURE_JOURNALS)
