@@ -10,7 +10,7 @@ import click
 from joblib import delayed, Parallel
 
 from src.arxiv_html_parser import extract_fig1_authors_affils
-from src.config import Config, MAX_NJOBS, TODAY_JST
+from src.config import Config, FEED_FAVICONS, MAX_NJOBS, TODAY_JST
 from src.fetcher import fetch_aps_papers_for_date, fetch_papers_for_date
 from src.llm_utils import recommend_papers
 from src.rss_generator import generate_rss_file
@@ -56,13 +56,15 @@ def run_arxiv_pipeline(date_jst: datetime) -> None:
 
     if not fetched_papers:
         logging.info("arXiv: No papers fetched. Writing empty feed.")
-        generate_rss_file([], [], DOCS_DIR / "arxiv.xml")
+        generate_rss_file([], [], DOCS_DIR / "arxiv.xml", favicon_url=FEED_FAVICONS["arxiv"])
         return
 
     recommended, others = _split_by_recommendation(fetched_papers)
     _enrich_arxiv_papers(recommended)
 
-    generate_rss_file(recommended, others, DOCS_DIR / "arxiv.xml")
+    generate_rss_file(
+        recommended, others, DOCS_DIR / "arxiv.xml", favicon_url=FEED_FAVICONS["arxiv"]
+    )
 
 
 def run_aps_pipeline(date_jst: datetime) -> None:
@@ -79,6 +81,7 @@ def run_aps_pipeline(date_jst: datetime) -> None:
                 DOCS_DIR / f"aps-{journal}.xml",
                 feed_title=f"lan496/article-rss-proxy/APS/{journal}",
                 source_label=f"aps-{journal}",
+                favicon_url=FEED_FAVICONS["aps"],
             )
         return
 
@@ -99,6 +102,7 @@ def run_aps_pipeline(date_jst: datetime) -> None:
             DOCS_DIR / f"aps-{journal}.xml",
             feed_title=f"lan496/article-rss-proxy/APS/{journal}",
             source_label=f"aps-{journal}",
+            favicon_url=FEED_FAVICONS["aps"],
         )
 
     # Write empty feeds for configured journals with no fetched papers
@@ -110,6 +114,7 @@ def run_aps_pipeline(date_jst: datetime) -> None:
                 DOCS_DIR / f"aps-{journal}.xml",
                 feed_title=f"lan496/article-rss-proxy/APS/{journal}",
                 source_label=f"aps-{journal}",
+                favicon_url=FEED_FAVICONS["aps"],
             )
 
 

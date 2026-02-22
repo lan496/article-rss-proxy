@@ -7,6 +7,11 @@ from zoneinfo import ZoneInfo
 
 MAX_NJOBS = 8
 
+FEED_FAVICONS: dict[str, str] = {
+    "arxiv": "https://arxiv.org/favicon.ico",
+    "aps": "https://cdn.journals.aps.org/development/journals/images/favicon.ico",
+}
+
 # For RSS generation
 TODAY_JST = datetime.now(ZoneInfo("Asia/Tokyo"))
 

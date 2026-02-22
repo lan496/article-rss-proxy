@@ -13,6 +13,7 @@ def generate_rss_file(
     xml_path: Path,
     feed_title: str | None = None,
     source_label: str = "arxiv",
+    favicon_url: str | None = None,
 ):
     config = Config()
 
@@ -22,6 +23,8 @@ def generate_rss_file(
     fg.title(feed_title or config.title)
     fg.description(feed_title or config.title)
     fg.language("ja")
+    if favicon_url:
+        fg.image(url=favicon_url, title=feed_title or config.title, link=config.deploy_url)
 
     for p in pushing_papers:
         fe = fg.add_entry()
