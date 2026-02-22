@@ -2,11 +2,11 @@
 
 [![Daily RSS update](https://github.com/lan496/article-rss-proxy/actions/workflows/arxiv_rss.yml/badge.svg)](https://github.com/lan496/article-rss-proxy/actions/workflows/arxiv_rss.yml)
 
-A tool that fetches papers from arXiv and APS (American Physical Society) journals, filters them by research interests using Gemini, and distributes them as RSS feeds.
+A tool that fetches papers from arXiv, APS (American Physical Society), and Nature journals, filters them by research interests using Gemini, and distributes them as RSS feeds.
 
 ## Features
 
-- Fetch papers from arXiv categories and APS Physical Review journals (PRB, PRL, PR Materials, PRX)
+- Fetch papers from arXiv categories, APS Physical Review journals (PRB, PRL, PR Materials, PRX), and Nature journals (npj Computational Materials)
 - Filter papers by research interests using the Gemini API
 - Extract figures, authors, and affiliations from arXiv papers
 - Generate per-source RSS feeds (GitHub Pages)
@@ -29,11 +29,12 @@ cp .env.example .env
 ```bash
 # Generate all RSS feeds
 uv run src/main.py
-# Outputs docs/arxiv.xml, docs/aps-prb.xml, docs/aps-prl.xml, etc.
+# Outputs docs/arxiv.xml, docs/aps-prb.xml, docs/nature-npjcompumats.xml, etc.
 
 # Run a specific pipeline only
 uv run src/main.py --pipeline arxiv
 uv run src/main.py --pipeline aps
+uv run src/main.py --pipeline nature
 ```
 
 ## Deploying with GitHub Pages
@@ -56,6 +57,7 @@ uv run src/main.py --pipeline aps
 | APS PRL | Physical Review Letters | https://lan496.github.io/article-rss-proxy/aps-prl.xml |
 | APS PR Materials | Physical Review Materials | https://lan496.github.io/article-rss-proxy/aps-prmaterials.xml |
 | APS PRX | Physical Review X | https://lan496.github.io/article-rss-proxy/aps-prx.xml |
+| Nature npj Comput Mater | npj Computational Materials | https://lan496.github.io/article-rss-proxy/nature-npjcompumats.xml |
 
 ## Automatic Updates
 
