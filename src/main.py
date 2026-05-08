@@ -13,7 +13,6 @@ from src.arxiv_html_parser import extract_fig1_authors_affils
 from src.config import Config, FEED_FAVICONS, MAX_NJOBS, TODAY_JST
 from src.fetcher import (
     fetch_aps_papers_for_date,
-    fetch_chemrxiv_papers_for_date,
     fetch_nature_papers_for_date,
     fetch_papers_for_date,
 )
@@ -174,62 +173,11 @@ def run_nature_pipeline(date_jst: datetime) -> None:
             )
 
 
-def run_chemrxiv_pipeline(date_jst: datetime) -> None:
-    papers_by_concept = fetch_chemrxiv_papers_for_date(date_jst)
-    total = sum(len(ps) for ps in papers_by_concept.values())
-    logging.info(f"ChemRxiv: Fetched {total} papers across {len(papers_by_concept)} concepts.")
-
-    if not papers_by_concept:
-        logging.info("ChemRxiv: No papers fetched. Writing empty feeds.")
-        for concept in Config().chemrxiv_concepts:
-            generate_rss_file(
-                [],
-                [],
-                DOCS_DIR / f"chemrxiv-{concept}.xml",
-                feed_title=f"lan496/article-rss-proxy/ChemRxiv/{concept}",
-                source_label=f"chemrxiv-{concept}",
-                favicon_url=FEED_FAVICONS["chemrxiv"],
-            )
-        return
-
-    # Flatten all papers for a single LLM recommendation pass
-    all_papers = [p for ps in papers_by_concept.values() for p in ps]
-    are_recommended = recommend_papers(all_papers)
-    recommendation_map = {paper.id: rec for paper, rec in zip(all_papers, are_recommended)}
-    logging.info(f"ChemRxiv: Recommend {sum(are_recommended)} papers.")
-
-    # Generate one XML per concept
-    for concept, concept_papers in papers_by_concept.items():
-        recommended = [p for p in concept_papers if recommendation_map[p.id]]
-        others = [p for p in concept_papers if not recommendation_map[p.id]]
-
-        generate_rss_file(
-            recommended,
-            others,
-            DOCS_DIR / f"chemrxiv-{concept}.xml",
-            feed_title=f"lan496/article-rss-proxy/ChemRxiv/{concept}",
-            source_label=f"chemrxiv-{concept}",
-            favicon_url=FEED_FAVICONS["chemrxiv"],
-        )
-
-    # Write empty feeds for configured concepts with no fetched papers
-    for concept in Config().chemrxiv_concepts:
-        if concept not in papers_by_concept:
-            generate_rss_file(
-                [],
-                [],
-                DOCS_DIR / f"chemrxiv-{concept}.xml",
-                feed_title=f"lan496/article-rss-proxy/ChemRxiv/{concept}",
-                source_label=f"chemrxiv-{concept}",
-                favicon_url=FEED_FAVICONS["chemrxiv"],
-            )
-
-
 @click.command()
 @click.option("--yymmdd", default=None, help="Date (YYMMDD). Defaults to today.")
 @click.option(
     "--pipeline",
-    type=click.Choice(["arxiv", "aps", "nature", "chemrxiv", "all"]),
+    type=click.Choice(["arxiv", "aps", "nature", "all"]),
     default="all",
     help="Which pipeline to run (default: all).",
 )
@@ -246,8 +194,6 @@ def main(yymmdd: str | None, pipeline: str):
         run_aps_pipeline(date_jst)
     if pipeline in ("nature", "all"):
         run_nature_pipeline(date_jst)
-    if pipeline in ("chemrxiv", "all"):
-        run_chemrxiv_pipeline(date_jst)
 
     tracker.log_summary()
 

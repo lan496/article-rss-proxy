@@ -11,7 +11,6 @@ FEED_FAVICONS: dict[str, str] = {
     "arxiv": "https://arxiv.org/favicon.ico",
     "aps": "https://cdn.journals.aps.org/development/journals/images/favicon.ico",
     "nature": "https://www.nature.com/uploads/product/npjcompumats/rss.png",
-    "chemrxiv": "https://chemrxiv.org/favicon.ico",
 }
 
 # For RSS generation
@@ -28,11 +27,6 @@ _APS_JOURNALS = ["prb", "prl", "prmaterials", "prx"]
 
 # For Nature journal fetch
 _NATURE_JOURNALS = ["npjcompumats"]
-
-# For ChemRxiv concept fetch (label -> category name for the public API)
-_CHEMRXIV_CONCEPTS: dict[str, str] = {
-    "theochem": "Theoretical and Computational Chemistry",
-}
 
 # For LLM-based paper filtering
 _INTERESTS = """\
@@ -53,4 +47,3 @@ class Config:
     interests: str = _INTERESTS
     aps_journals: list[str] = field(default_factory=lambda: _APS_JOURNALS)
     nature_journals: list[str] = field(default_factory=lambda: _NATURE_JOURNALS)
-    chemrxiv_concepts: dict[str, str] = field(default_factory=lambda: dict(_CHEMRXIV_CONCEPTS))
