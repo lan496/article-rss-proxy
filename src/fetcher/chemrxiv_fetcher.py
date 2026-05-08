@@ -13,12 +13,40 @@ _CATEGORIES_URL = "https://chemrxiv.org/engage/chemrxiv/public-api/v1/categories
 _DISCIPLINES_URL = "https://chemrxiv.org/engage/chemrxiv/public-api/v1/disciplines"
 _ITEMS_URL = "https://chemrxiv.org/engage/chemrxiv/public-api/v1/items"
 
-# Cloudflare blocks the default python-requests user agent.
-_BROWSER_UA = (
-    "Mozilla/5.0 (Macintosh, Intel Mac OS X 10_15_7) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/120.0.0.0 Safari/537.36"
-)
+_WARMUP_URL = "https://chemrxiv.org/engage/chemrxiv/search-dashboard"
+
+# Full browser headers to satisfy Cloudflare bot-mitigation checks.
+# The warmup GET to _WARMUP_URL seeds the __cf_bm cookie before API calls.
+_BROWSER_HEADERS: dict[str, str] = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/131.0.0.0 Safari/537.36"
+    ),
+    "Accept": "application/json",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Origin": "https://chemrxiv.org",
+    "Referer": _WARMUP_URL,
+    "Sec-Fetch-Site": "same-origin",
+    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Dest": "empty",
+    "Sec-Ch-Ua": '"Chromium";v="131", "Not?A_Brand";v="8"',
+    "Sec-Ch-Ua-Mobile": "?0",
+    "Sec-Ch-Ua-Platform": '"macOS"',
+}
+
+
+def _warmup_session(session: requests.Session) -> None:
+    """GET the search-dashboard page once so Cloudflare issues the __cf_bm cookie."""
+    warmup_headers = {**_BROWSER_HEADERS, "Accept": "text/html,application/xhtml+xml,*/*"}
+    resp = session.get(_WARMUP_URL, headers=warmup_headers, timeout=30)
+    if resp.status_code == 403:
+        raise requests.HTTPError(
+            "ChemRxiv warmup GET returned 403 -- Cloudflare JS challenge, requests cannot solve this",
+            response=resp,
+        )
+    resp.raise_for_status()
 
 
 def _resolve_category_id(session: requests.Session, category_name: str) -> str:
@@ -77,7 +105,10 @@ def fetch_chemrxiv_papers_for_date(date_jst: datetime) -> dict[str, list[Paper]]
     papers_by_concept: dict[str, list[Paper]] = {}
 
     session = requests.Session()
-    session.headers.update({"User-Agent": _BROWSER_UA, "Accept": "application/json"})
+    session.headers.update(_BROWSER_HEADERS)
+
+    # Warm up the session once so Cloudflare issues the __cf_bm cookie.
+    _warmup_session(session)
 
     window_start = (date_jst - timedelta(hours=24)).astimezone(timezone.utc)
     window_end = (date_jst + timedelta(hours=24)).astimezone(timezone.utc)
