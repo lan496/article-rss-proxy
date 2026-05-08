@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 import logging
 
+import cloudscraper  # type: ignore[import-untyped]
 import requests
 
 from src.config import Config
@@ -104,7 +105,9 @@ def fetch_chemrxiv_papers_for_date(date_jst: datetime) -> dict[str, list[Paper]]
     config = Config()
     papers_by_concept: dict[str, list[Paper]] = {}
 
-    session = requests.Session()
+    session = cloudscraper.create_scraper(
+        browser={"browser": "chrome", "platform": "darwin", "mobile": False}
+    )
     session.headers.update(_BROWSER_HEADERS)
 
     # Warm up the session once so Cloudflare issues the __cf_bm cookie.
