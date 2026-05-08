@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-article-rss-proxy is a Python tool that creates personalized RSS feeds from academic paper sources. It fetches papers from arXiv and APS (American Physical Society) journals, filters them using the Gemini API based on configured research interests, extracts figures/authors/affiliations from arXiv HTML pages, and generates per-source RSS feeds. A GitHub Actions workflow runs daily to publish the feeds to GitHub Pages.
+article-rss-proxy is a Python tool that creates personalized RSS feeds from academic paper sources. It fetches papers from arXiv, APS (American Physical Society) journals, Nature journals, and ChemRxiv (by concept), filters them using the Gemini API based on configured research interests, extracts figures/authors/affiliations from arXiv HTML pages, and generates per-source RSS feeds. A GitHub Actions workflow runs daily to publish the feeds to GitHub Pages.
 
 ## Commands
 
@@ -31,7 +31,7 @@ pre-commit run --all-files
 
 ## Architecture
 
-`src/main.py` orchestrates two independent pipelines (arXiv and APS), selectable via `--pipeline`.
+`src/main.py` orchestrates four independent pipelines (arXiv, APS, Nature, ChemRxiv), selectable via `--pipeline`.
 
 ### arXiv Pipeline (`run_arxiv_pipeline`)
 
@@ -46,6 +46,12 @@ pre-commit run --all-files
 2. **Filter** (`llm_utils.py` → `recommend_papers`): Single LLM pass across all journals for recommendation.
 3. **Generate RSS** (`rss_generator.py`): Produces one XML per journal (`docs/aps-{journal}.xml`).
 
+### ChemRxiv Pipeline (`run_chemrxiv_pipeline`)
+
+1. **Fetch** (`fetcher/chemrxiv_fetcher.py`): Hits the ChemRxiv search RSS feed (`/action/showFeed?type=search&query=ConceptID=...&format=rss`) per configured concept, using a `requests.Session` with a browser User-Agent so Cloudflare returns the feed (default UA is blocked).
+2. **Filter** (`llm_utils.py` → `recommend_papers`): Single LLM pass across all concepts.
+3. **Generate RSS** (`rss_generator.py`): Produces one XML per concept (`docs/chemrxiv-{concept}.xml`).
+
 ### Shared
 
 The `Paper` dataclass (`paper.py`) flows through all stages, accumulating fields (fig1, authors, affils). `Config` (`config.py`) centralizes all user preferences: arXiv categories, APS journals, and research interests prompt.
@@ -57,6 +63,6 @@ The `Paper` dataclass (`paper.py`) flows through all stages, accumulating fields
 - **Secrets**: `GEMINI_API_KEY` loaded from `.env` via python-dotenv
 - **Rate limiting**: 60-second waits between Gemini API batches; exponential backoff on 429/5xx errors (up to 10 retries)
 - **Parallelism**: joblib with `MAX_NJOBS=8` for translation and HTML parsing
-- **Output**: `docs/arxiv.xml`, `docs/aps-*.xml` (gitignored; deployed to `gh-pages` branch by CI)
+- **Output**: `docs/arxiv.xml`, `docs/aps-*.xml`, `docs/nature-*.xml`, `docs/chemrxiv-*.xml` (gitignored; deployed to `gh-pages` branch by CI)
 - **CI**: GitHub Actions runs daily at 02:17 UTC (11:17 JST), commits output to `gh-pages` branch
 - **No test suite**: The project currently has no automated tests
