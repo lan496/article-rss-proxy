@@ -3,18 +3,16 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 import logging
 
-from bs4 import BeautifulSoup
-import feedparser
 import requests
 
 from src.config import Config
 from src.paper import Paper
 
 
-CHEMRXIV_FEED_URL = (
-    "https://chemrxiv.org/action/showFeed"
-    "?type=search&format=rss&query=ConceptID%3D{concept_id}"
-)
+_CATEGORIES_URL = "https://chemrxiv.org/engage/chemrxiv/public-api/v1/categories"
+_DISCIPLINES_URL = "https://chemrxiv.org/engage/chemrxiv/public-api/v1/disciplines"
+_ITEMS_URL = "https://chemrxiv.org/engage/chemrxiv/public-api/v1/items"
+
 # Cloudflare blocks the default python-requests user agent.
 _BROWSER_UA = (
     "Mozilla/5.0 (Macintosh, Intel Mac OS X 10_15_7) "
@@ -23,20 +21,55 @@ _BROWSER_UA = (
 )
 
 
-def _parse_summary(entry: feedparser.FeedParserDict) -> str:
-    content_list = getattr(entry, "content", None)
-    if content_list:
-        html = content_list[0].get("value", "")
-        soup = BeautifulSoup(html, "html.parser")
-        return soup.get_text(strip=True)
-    return getattr(entry, "summary", "")
+def _resolve_category_id(session: requests.Session, category_name: str) -> str:
+    """Resolve a human-readable category name to its ChemRxiv UUID."""
+    for url in (_CATEGORIES_URL, _DISCIPLINES_URL):
+        resp = session.get(url, timeout=30)
+        if resp.status_code == 404:
+            continue
+        resp.raise_for_status()
+        data = resp.json()
+        # The API may return a list or a wrapper dict with a named key.
+        if isinstance(data, list):
+            entries: list[dict] = data
+        else:
+            entries = data.get("categories", data.get("disciplines", []))
+        name_lower = category_name.lower()
+        for entry in entries:
+            if entry.get("name", "").lower() == name_lower:
+                return str(entry["id"])
+        available = [e.get("name", "") for e in entries]
+        raise ValueError(
+            f"Category {category_name!r} not found in {url}. Available names: {available}"
+        )
+    raise ValueError(
+        f"Could not fetch category list for {category_name!r}: "
+        "both /categories and /disciplines returned 404"
+    )
 
 
-def _parse_authors(entry: feedparser.FeedParserDict) -> list[str]:
-    authors_list = getattr(entry, "authors", None)
-    if authors_list:
-        return [a.get("name", "").strip() for a in authors_list if a.get("name", "").strip()]
-    return []
+def _parse_authors(item: dict) -> list[str]:
+    authors_raw: list[dict] = item.get("authors") or []
+    result: list[str] = []
+    for a in authors_raw:
+        if "firstName" in a or "lastName" in a:
+            first = a.get("firstName", "")
+            last = a.get("lastName", "")
+            name = f"{first} {last}".strip()
+        else:
+            name = a.get("name", "").strip()
+        if name:
+            result.append(name)
+    return result
+
+
+def _parse_date(raw: str | None) -> datetime | None:
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return None
 
 
 def fetch_chemrxiv_papers_for_date(date_jst: datetime) -> dict[str, list[Paper]]:
@@ -44,44 +77,70 @@ def fetch_chemrxiv_papers_for_date(date_jst: datetime) -> dict[str, list[Paper]]
     papers_by_concept: dict[str, list[Paper]] = {}
 
     session = requests.Session()
-    session.headers.update({"User-Agent": _BROWSER_UA})
+    session.headers.update({"User-Agent": _BROWSER_UA, "Accept": "application/json"})
 
-    for concept, concept_id in config.chemrxiv_concepts.items():
-        url = CHEMRXIV_FEED_URL.format(concept_id=concept_id)
+    window_start = (date_jst - timedelta(hours=24)).astimezone(timezone.utc)
+    window_end = (date_jst + timedelta(hours=24)).astimezone(timezone.utc)
+    search_date_from = window_start.strftime("%Y-%m-%dT%H:%M:%SZ")
+    search_date_to = window_end.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    for concept, category_name in config.chemrxiv_concepts.items():
         try:
-            response = session.get(url, timeout=30)
+            category_id = _resolve_category_id(session, category_name)
+            params: dict[str, str | int] = {
+                "term": "",
+                "categoryIds": category_id,
+                "searchDateFrom": search_date_from,
+                "searchDateTo": search_date_to,
+                "sort": "PUBLISHED_DATE_DESC",
+                "limit": 50,
+                "skip": 0,
+            }
+            response = session.get(_ITEMS_URL, params=params, timeout=30)
             response.raise_for_status()
-            feed = feedparser.parse(response.text)
+            payload = response.json()
         except requests.RequestException as e:
-            logging.error(f"Error fetching ChemRxiv feed for {concept}: {e}")
-            continue
+            logging.error(f"Error fetching ChemRxiv items for {concept}: {e}")
+            raise
+
+        if "itemHits" not in payload:
+            raise ValueError(f"ChemRxiv API response missing itemHits key for concept {concept!r}")
 
         seen: set[str] = set()
         concept_papers: list[Paper] = []
-        for entry in feed.entries:
-            entry_date = str(getattr(entry, "dc_date", "") or getattr(entry, "updated", ""))
-            try:
-                parsed_date = datetime.fromisoformat(entry_date.replace("Z", "+00:00"))
-                if parsed_date.tzinfo is None:
-                    parsed_date = parsed_date.replace(tzinfo=timezone.utc)
-            except (ValueError, TypeError):
-                logging.warning(f"Skipping entry with malformed date: {entry_date}")
+
+        for hit in payload["itemHits"]:
+            item: dict = hit.get("item", hit)
+
+            raw_date = item.get("publishedDate") or item.get("submittedDate")
+            parsed_date = _parse_date(raw_date)
+            if parsed_date is None:
+                logging.warning(f"Skipping ChemRxiv entry with malformed date: {raw_date}")
                 continue
+            if parsed_date.tzinfo is None:
+                parsed_date = parsed_date.replace(tzinfo=timezone.utc)
             if abs(date_jst - parsed_date) > timedelta(hours=24):
                 continue
 
-            paper_id: str = getattr(entry, "prism_doi", None) or entry.get("link", "")
-            if paper_id in seen:
+            item_id: str = str(item.get("id", ""))
+            doi: str = str(item.get("doi", ""))
+            if doi:
+                link = f"https://doi.org/{doi}"
+            else:
+                link = f"https://chemrxiv.org/engage/chemrxiv/article-details/{item_id}"
+
+            dedup_key = doi or item_id
+            if dedup_key in seen:
                 continue
-            seen.add(paper_id)
+            seen.add(dedup_key)
 
             concept_papers.append(
                 Paper(
-                    id=paper_id,
-                    title=entry.get("title", "").strip(),
-                    link=entry.get("link", ""),
-                    summary=_parse_summary(entry),
-                    authors=_parse_authors(entry),
+                    id=doi or item_id,
+                    title=str(item.get("title", "")).strip(),
+                    link=link,
+                    summary=str(item.get("abstract", "")),
+                    authors=_parse_authors(item),
                     category=concept,
                     updated=parsed_date.isoformat(),
                 )

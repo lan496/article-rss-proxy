@@ -29,9 +29,9 @@ _APS_JOURNALS = ["prb", "prl", "prmaterials", "prx"]
 # For Nature journal fetch
 _NATURE_JOURNALS = ["npjcompumats"]
 
-# For ChemRxiv concept fetch (label -> ConceptID used by chemrxiv.org search)
+# For ChemRxiv concept fetch (label -> category name for the public API)
 _CHEMRXIV_CONCEPTS: dict[str, str] = {
-    "theochem": "502565",  # Theoretical and Computational Chemistry
+    "theochem": "Theoretical and Computational Chemistry",
 }
 
 # For LLM-based paper filtering
