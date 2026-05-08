@@ -28,6 +28,9 @@ dependencies = [
 [tool.hatch.build.targets.wheel]
 packages = ["src"]
 
+[tool.uv]
+exclude-newer = "1 week"
+
 [dependency-groups]
 dev = [
     "jupyter>=1.1.1",

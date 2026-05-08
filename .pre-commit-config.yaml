@@ -25,6 +25,6 @@ repos:
     additional_dependencies:
       - types-requests
 - repo: https://github.com/astral-sh/uv-pre-commit
-  rev: 0.7.12
+  rev: 0.11.11
   hooks:
   - id: uv-lock
