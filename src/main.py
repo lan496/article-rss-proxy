@@ -13,6 +13,7 @@ from src.arxiv_html_parser import extract_fig1_authors_affils
 from src.config import Config, FEED_FAVICONS, MAX_NJOBS, TODAY_JST
 from src.fetcher import (
     fetch_aps_papers_for_date,
+    fetch_chemrxiv_papers_for_date,
     fetch_nature_papers_for_date,
     fetch_papers_for_date,
 )
@@ -173,11 +174,39 @@ def run_nature_pipeline(date_jst: datetime) -> None:
             )
 
 
+def run_chemrxiv_pipeline(date_jst: datetime) -> None:
+    fetched_papers = fetch_chemrxiv_papers_for_date(date_jst)
+    logging.info(f"ChemRxiv: Fetched {len(fetched_papers)} papers.")
+
+    if not fetched_papers:
+        logging.info("ChemRxiv: No papers fetched. Writing empty feed.")
+        generate_rss_file(
+            [],
+            [],
+            DOCS_DIR / "chemrxiv.xml",
+            feed_title="lan496/article-rss-proxy/ChemRxiv",
+            source_label="chemrxiv",
+            favicon_url=FEED_FAVICONS["chemrxiv"],
+        )
+        return
+
+    recommended, others = _split_by_recommendation(fetched_papers)
+
+    generate_rss_file(
+        recommended,
+        others,
+        DOCS_DIR / "chemrxiv.xml",
+        feed_title="lan496/article-rss-proxy/ChemRxiv",
+        source_label="chemrxiv",
+        favicon_url=FEED_FAVICONS["chemrxiv"],
+    )
+
+
 @click.command()
 @click.option("--yymmdd", default=None, help="Date (YYMMDD). Defaults to today.")
 @click.option(
     "--pipeline",
-    type=click.Choice(["arxiv", "aps", "nature", "all"]),
+    type=click.Choice(["arxiv", "aps", "nature", "chemrxiv", "all"]),
     default="all",
     help="Which pipeline to run (default: all).",
 )
@@ -194,6 +223,8 @@ def main(yymmdd: str | None, pipeline: str):
         run_aps_pipeline(date_jst)
     if pipeline in ("nature", "all"):
         run_nature_pipeline(date_jst)
+    if pipeline in ("chemrxiv", "all"):
+        run_chemrxiv_pipeline(date_jst)
 
     tracker.log_summary()
 
