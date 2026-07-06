@@ -29,6 +29,16 @@ _APS_JOURNALS = ["prb", "prl", "prmaterials", "prx"]
 # For Nature journal fetch
 _NATURE_JOURNALS = ["npjcompumats"]
 
+# Crossref carries no ChemRxiv subject-area metadata, so this instruction makes
+# the LLM stand in for the old "Theoretical and Computational Chemistry" filter.
+_CHEMRXIV_EXTRA_CRITERIA = """\
+The papers below are ChemRxiv preprints from all areas of chemistry. Only answer "yes" \
+for papers whose main contribution is theoretical or computational (e.g., DFT, ab initio \
+methods, molecular dynamics, machine-learning potentials, crystal structure prediction, \
+simulation software) AND that match the interests above. Answer "no" for primarily \
+experimental papers, even if their topic overlaps with the interests.
+"""
+
 # For LLM-based paper filtering
 _INTERESTS = """\
 - Research discussing material properties from the perspective of symmetry
@@ -48,3 +58,4 @@ class Config:
     interests: str = _INTERESTS
     aps_journals: list[str] = field(default_factory=lambda: _APS_JOURNALS)
     nature_journals: list[str] = field(default_factory=lambda: _NATURE_JOURNALS)
+    chemrxiv_extra_criteria: str = _CHEMRXIV_EXTRA_CRITERIA
