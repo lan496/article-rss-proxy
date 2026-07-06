@@ -54,6 +54,7 @@ jobs:
 
       # 生成ファイルをコミット
       - name: Commit & push RSS
+        id: commit_rss
         uses: EndBug/add-and-commit@v9
         with:
           add: 'docs/*.xml'
@@ -61,3 +62,33 @@ jobs:
           message: 'chore: update RSS feed'
           new_branch: gh-pages
           push: '--set-upstream origin gh-pages --force'
+
+      # The auto-generated "pages build and deployment" workflow sometimes fails
+      # with "Deployment failed, try again later." and leaves the Pages build
+      # stuck in "building" (e.g. runs 28696918544, 28781547136). Requesting a
+      # fresh build via the API recovers it, so poll the build status here and
+      # retry until the pushed commit is deployed.
+      - name: Verify Pages deployment (retry stuck builds)
+        if: steps.commit_rss.outputs.pushed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SHA: ${{ steps.commit_rss.outputs.commit_long_sha }}
+        run: |
+          for attempt in 1 2 3; do
+            for i in $(seq 1 20); do
+              status=$(gh api "repos/${GITHUB_REPOSITORY}/pages/builds/latest" --jq '.status')
+              commit=$(gh api "repos/${GITHUB_REPOSITORY}/pages/builds/latest" --jq '.commit')
+              if [ "$commit" = "$EXPECTED_SHA" ] && [ "$status" = "built" ]; then
+                echo "Pages build for $EXPECTED_SHA completed."
+                exit 0
+              fi
+              if [ "$commit" = "$EXPECTED_SHA" ] && [ "$status" = "errored" ]; then
+                break
+              fi
+              sleep 15
+            done
+            echo "Pages build incomplete (status=$status commit=$commit); requesting a fresh build (attempt $attempt)."
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/builds"
+          done
+          echo "::error::GitHub Pages deployment for $EXPECTED_SHA did not complete after retries."
+          exit 1
