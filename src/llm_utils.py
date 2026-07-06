@@ -67,12 +67,14 @@ Given the following paper title and abstract pairs, classify each as yes/no. Res
 """
 
 
-def recommend_batch(papers_batch: list[Paper], wait=True) -> list[bool]:
+def recommend_batch(papers_batch: list[Paper], wait=True, extra_criteria: str = "") -> list[bool]:
     papers_batch_str = ""
     for i, paper in enumerate(papers_batch):
         title = paper.title.replace("\n", " ")
         papers_batch_str += f"[{i}] {title}\nAbstract: {paper.summary}\n----------\n"
     interests = Config().interests
+    if extra_criteria:
+        interests += "\n" + extra_criteria
     res_batch = ask_gemini(
         RECOMMEND_PROMPT.replace("{INTERESTS}", interests) + papers_batch_str, "gemini-2.5-flash"
     )
@@ -82,7 +84,9 @@ def recommend_batch(papers_batch: list[Paper], wait=True) -> list[bool]:
     return [res_batch_dict.get(str(i), "no") == "yes" for i in range(len(papers_batch))]
 
 
-def recommend_papers(papers: list[Paper], batch_size: int = 25) -> list[bool]:
+def recommend_papers(
+    papers: list[Paper], batch_size: int = 25, extra_criteria: str = ""
+) -> list[bool]:
     n_batches = (len(papers) + batch_size - 1) // batch_size
     n_jobs = max(1, min(MAX_NJOBS, n_batches))
 
@@ -92,6 +96,7 @@ def recommend_papers(papers: list[Paper], batch_size: int = 25) -> list[bool]:
         return papers[start:end]
 
     res = Parallel(n_jobs=n_jobs, backend="threading")(
-        delayed(recommend_batch)(_get_batch(i)) for i in range(n_batches)
+        delayed(recommend_batch)(_get_batch(i), extra_criteria=extra_criteria)
+        for i in range(n_batches)
     )
     return sum(res, [])

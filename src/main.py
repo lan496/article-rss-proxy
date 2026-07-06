@@ -31,8 +31,10 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 DOCS_DIR = Path(__file__).parent.parent / "docs"
 
 
-def _split_by_recommendation(papers: list[Paper]) -> tuple[list[Paper], list[Paper]]:
-    are_recommended = recommend_papers(papers)
+def _split_by_recommendation(
+    papers: list[Paper], extra_criteria: str = ""
+) -> tuple[list[Paper], list[Paper]]:
+    are_recommended = recommend_papers(papers, extra_criteria=extra_criteria)
     recommended: list[Paper] = []
     others: list[Paper] = []
     for is_recommended, paper in zip(are_recommended, papers):
@@ -190,7 +192,9 @@ def run_chemrxiv_pipeline(date_jst: datetime) -> None:
         )
         return
 
-    recommended, others = _split_by_recommendation(fetched_papers)
+    recommended, others = _split_by_recommendation(
+        fetched_papers, extra_criteria=Config().chemrxiv_extra_criteria
+    )
 
     generate_rss_file(
         recommended,
