@@ -58,7 +58,9 @@ def fetch_chemrxiv_papers_for_date(date_jst: datetime) -> list[Paper]:
     for item in message.get("items", []):
         parsed_date = _parse_posted_date(item)
         if parsed_date is None:
-            logging.warning(f"Skipping ChemRxiv entry with malformed posted date: {item.get('DOI')}")
+            logging.warning(
+                f"Skipping ChemRxiv entry with malformed posted date: {item.get('DOI')}"
+            )
             continue
         if abs(date_jst - parsed_date) > timedelta(hours=24):
             continue
