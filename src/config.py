@@ -11,6 +11,7 @@ FEED_FAVICONS: dict[str, str] = {
     "arxiv": "https://arxiv.org/favicon.ico",
     "aps": "https://cdn.journals.aps.org/development/journals/images/favicon.ico",
     "nature": "https://www.nature.com/uploads/product/npjcompumats/rss.png",
+    "chemrxiv": "https://chemrxiv.org/favicon.ico",
 }
 
 # For RSS generation

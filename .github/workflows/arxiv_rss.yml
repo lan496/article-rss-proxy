@@ -20,6 +20,7 @@ on:
           - arxiv
           - aps
           - nature
+          - chemrxiv
 
 jobs:
   build-and-push:
