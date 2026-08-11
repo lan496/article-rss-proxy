@@ -56,10 +56,19 @@ def ask_gemini(prompt: str, model: str) -> str:
 
 
 RECOMMEND_PROMPT = """\
-Your role is to read paper titles and abstracts and determine whether they would interest the reader.
+Your role is to read paper titles and abstracts and determine whether they are worth the reader's time.
 
 The reader's areas of interest span
 {INTERESTS}
+
+Whatever the topic, answer "no" for:
+{EXCLUSIONS}
+
+Be strict. These are unfiltered daily listings, so most papers are irrelevant and "no" is \
+the expected answer. Answer "yes" only when the paper's own main contribution falls \
+squarely under one of the interests above. Sharing a material, a method, or a research \
+field with an interest is not enough, and neither is a passing mention of symmetry, \
+crystal structures, or machine learning in service of some other goal.
 
 Given the following paper title and abstract pairs, classify each as yes/no. Respond in JSON format like:
 {"0": "yes", "1": "no", ...}
@@ -72,12 +81,14 @@ def recommend_batch(papers_batch: list[Paper], wait=True, extra_criteria: str = 
     for i, paper in enumerate(papers_batch):
         title = paper.title.replace("\n", " ")
         papers_batch_str += f"[{i}] {title}\nAbstract: {paper.summary}\n----------\n"
-    interests = Config().interests
+    config = Config()
+    interests = config.interests
     if extra_criteria:
         interests += "\n" + extra_criteria
-    res_batch = ask_gemini(
-        RECOMMEND_PROMPT.replace("{INTERESTS}", interests) + papers_batch_str, "gemini-2.5-flash"
+    prompt = RECOMMEND_PROMPT.replace("{INTERESTS}", interests).replace(
+        "{EXCLUSIONS}", config.exclusions
     )
+    res_batch = ask_gemini(prompt + papers_batch_str, "gemini-2.5-flash")
     if wait:
         time.sleep(60)
     res_batch_dict = json.loads(res_batch.replace("```json", "").replace("```", ""))
