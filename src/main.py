@@ -23,6 +23,8 @@ from src.usage_tracker import tracker
 
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from src.paper import Paper
 
 
@@ -74,106 +76,62 @@ def run_arxiv_pipeline(date_jst: datetime) -> None:
     )
 
 
-def run_aps_pipeline(date_jst: datetime) -> None:
-    papers_by_journal = fetch_aps_papers_for_date(date_jst)
+def _run_journal_pipeline(
+    date_jst: datetime,
+    label: str,
+    slug: str,
+    journals: list[str],
+    fetch: Callable[[datetime], dict[str, list[Paper]]],
+) -> None:
+    """Fetch, recommend, and write one RSS feed per journal for a multi-journal source."""
+    papers_by_journal = fetch(date_jst)
     total = sum(len(ps) for ps in papers_by_journal.values())
-    logging.info(f"APS: Fetched {total} papers across {len(papers_by_journal)} journals.")
+    logging.info(f"{label}: Fetched {total} papers across {len(papers_by_journal)} journals.")
+
+    def write_feed(journal: str, recommended: list[Paper], others: list[Paper]) -> None:
+        generate_rss_file(
+            recommended,
+            others,
+            DOCS_DIR / f"{slug}-{journal}.xml",
+            feed_title=f"lan496/article-rss-proxy/{label}/{journal}",
+            source_label=f"{slug}-{journal}",
+            favicon_url=FEED_FAVICONS[slug],
+        )
 
     if not papers_by_journal:
-        logging.info("APS: No papers fetched. Writing empty feeds.")
-        for journal in Config().aps_journals:
-            generate_rss_file(
-                [],
-                [],
-                DOCS_DIR / f"aps-{journal}.xml",
-                feed_title=f"lan496/article-rss-proxy/APS/{journal}",
-                source_label=f"aps-{journal}",
-                favicon_url=FEED_FAVICONS["aps"],
-            )
+        logging.info(f"{label}: No papers fetched. Writing empty feeds.")
+        for journal in journals:
+            write_feed(journal, [], [])
         return
 
     # Flatten all papers for a single LLM recommendation pass
     all_papers = [p for ps in papers_by_journal.values() for p in ps]
     are_recommended = recommend_papers(all_papers)
     recommendation_map = {paper.id: rec for paper, rec in zip(all_papers, are_recommended)}
-    logging.info(f"APS: Recommend {sum(are_recommended)} papers.")
+    logging.info(f"{label}: Recommend {sum(are_recommended)} papers.")
 
     # Generate one XML per journal
     for journal, journal_papers in papers_by_journal.items():
-        recommended = [p for p in journal_papers if recommendation_map[p.id]]
-        others = [p for p in journal_papers if not recommendation_map[p.id]]
-
-        generate_rss_file(
-            recommended,
-            others,
-            DOCS_DIR / f"aps-{journal}.xml",
-            feed_title=f"lan496/article-rss-proxy/APS/{journal}",
-            source_label=f"aps-{journal}",
-            favicon_url=FEED_FAVICONS["aps"],
+        write_feed(
+            journal,
+            [p for p in journal_papers if recommendation_map[p.id]],
+            [p for p in journal_papers if not recommendation_map[p.id]],
         )
 
     # Write empty feeds for configured journals with no fetched papers
-    for journal in Config().aps_journals:
+    for journal in journals:
         if journal not in papers_by_journal:
-            generate_rss_file(
-                [],
-                [],
-                DOCS_DIR / f"aps-{journal}.xml",
-                feed_title=f"lan496/article-rss-proxy/APS/{journal}",
-                source_label=f"aps-{journal}",
-                favicon_url=FEED_FAVICONS["aps"],
-            )
+            write_feed(journal, [], [])
+
+
+def run_aps_pipeline(date_jst: datetime) -> None:
+    _run_journal_pipeline(date_jst, "APS", "aps", Config().aps_journals, fetch_aps_papers_for_date)
 
 
 def run_nature_pipeline(date_jst: datetime) -> None:
-    papers_by_journal = fetch_nature_papers_for_date(date_jst)
-    total = sum(len(ps) for ps in papers_by_journal.values())
-    logging.info(f"Nature: Fetched {total} papers across {len(papers_by_journal)} journals.")
-
-    if not papers_by_journal:
-        logging.info("Nature: No papers fetched. Writing empty feeds.")
-        for journal in Config().nature_journals:
-            generate_rss_file(
-                [],
-                [],
-                DOCS_DIR / f"nature-{journal}.xml",
-                feed_title=f"lan496/article-rss-proxy/Nature/{journal}",
-                source_label=f"nature-{journal}",
-                favicon_url=FEED_FAVICONS["nature"],
-            )
-        return
-
-    # Flatten all papers for a single LLM recommendation pass
-    all_papers = [p for ps in papers_by_journal.values() for p in ps]
-    are_recommended = recommend_papers(all_papers)
-    recommendation_map = {paper.id: rec for paper, rec in zip(all_papers, are_recommended)}
-    logging.info(f"Nature: Recommend {sum(are_recommended)} papers.")
-
-    # Generate one XML per journal
-    for journal, journal_papers in papers_by_journal.items():
-        recommended = [p for p in journal_papers if recommendation_map[p.id]]
-        others = [p for p in journal_papers if not recommendation_map[p.id]]
-
-        generate_rss_file(
-            recommended,
-            others,
-            DOCS_DIR / f"nature-{journal}.xml",
-            feed_title=f"lan496/article-rss-proxy/Nature/{journal}",
-            source_label=f"nature-{journal}",
-            favicon_url=FEED_FAVICONS["nature"],
-        )
-
-    # Write empty feeds for configured journals with no fetched papers
-    for journal in Config().nature_journals:
-        if journal not in papers_by_journal:
-            generate_rss_file(
-                [],
-                [],
-                DOCS_DIR / f"nature-{journal}.xml",
-                feed_title=f"lan496/article-rss-proxy/Nature/{journal}",
-                source_label=f"nature-{journal}",
-                favicon_url=FEED_FAVICONS["nature"],
-            )
+    _run_journal_pipeline(
+        date_jst, "Nature", "nature", Config().nature_journals, fetch_nature_papers_for_date
+    )
 
 
 def run_chemrxiv_pipeline(date_jst: datetime) -> None:
