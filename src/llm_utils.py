@@ -76,7 +76,7 @@ Given the following paper title and abstract pairs, classify each as yes/no. Res
 """
 
 
-def recommend_batch(papers_batch: list[Paper], wait=True, extra_criteria: str = "") -> list[bool]:
+def recommend_batch(papers_batch: list[Paper], extra_criteria: str = "") -> list[bool]:
     papers_batch_str = ""
     for i, paper in enumerate(papers_batch):
         title = paper.title.replace("\n", " ")
@@ -89,8 +89,7 @@ def recommend_batch(papers_batch: list[Paper], wait=True, extra_criteria: str = 
         "{EXCLUSIONS}", config.exclusions
     )
     res_batch = ask_gemini(prompt + papers_batch_str, "gemini-2.5-flash")
-    if wait:
-        time.sleep(60)
+    time.sleep(60)
     res_batch_dict = json.loads(res_batch.replace("```json", "").replace("```", ""))
     return [res_batch_dict.get(str(i), "no") == "yes" for i in range(len(papers_batch))]
 
