@@ -62,7 +62,7 @@ The `Paper` dataclass (`paper.py`) flows through all stages, accumulating fields
 - **Python**: >=3.12, source in `src/` (flat layout, no package directory)
 - **Secrets**: `GEMINI_API_KEY` loaded from `.env` via python-dotenv
 - **Rate limiting**: 60-second waits between Gemini API batches; exponential backoff on 429/5xx errors (up to 10 retries)
-- **Parallelism**: joblib with `MAX_NJOBS=8` for translation and HTML parsing
+- **Parallelism**: joblib with `MAX_NJOBS=8` for LLM recommendation batches and HTML parsing
 - **Output**: `docs/arxiv.xml`, `docs/aps-*.xml`, `docs/nature-*.xml`, `docs/chemrxiv.xml` (gitignored; deployed to `gh-pages` branch by CI)
 - **CI**: GitHub Actions runs daily at 02:17 UTC (11:17 JST), commits output to `gh-pages` branch
 - **No test suite**: The project currently has no automated tests

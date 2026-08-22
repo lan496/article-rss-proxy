@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "article-rss-proxy"
 version = "0.1.0"
-description = "A tool to fetch papers, filter and translate them using Gemini, and deliver them as RSS feeds."
+description = "A tool to fetch papers, filter them using Gemini, and deliver them as RSS feeds."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
