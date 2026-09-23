@@ -39,7 +39,15 @@ jobs:
         run: |
           uv sync --no-dev
 
+      # Seed docs/ with the currently published feeds, so a pipeline that fails
+      # today keeps yesterday's feed instead of dropping it from gh-pages.
+      - name: Restore previous feeds
+        run: |
+          git fetch --depth=1 origin gh-pages
+          git restore --source=FETCH_HEAD -- docs
+
       - name: Run generator
+        id: generate
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
@@ -53,8 +61,10 @@ jobs:
           uv run src/main.py $ARGS
 
       # 生成ファイルをコミット
+      # Publish even if some pipelines failed; the job still ends red.
       - name: Commit & push RSS
         id: commit_rss
+        if: ${{ !cancelled() && steps.generate.outcome != 'skipped' }}
         uses: EndBug/add-and-commit@v9
         with:
           add: 'docs/*.xml'
@@ -69,7 +79,7 @@ jobs:
       # fresh build via the API recovers it, so poll the build status here and
       # retry until the pushed commit is deployed.
       - name: Verify Pages deployment (retry stuck builds)
-        if: steps.commit_rss.outputs.pushed == 'true'
+        if: ${{ !cancelled() && steps.commit_rss.outputs.pushed == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
           EXPECTED_SHA: ${{ steps.commit_rss.outputs.commit_long_sha }}
