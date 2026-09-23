@@ -179,16 +179,26 @@ def main(yymmdd: str | None, pipeline: str):
 
     date_jst = datetime.strptime(yymmdd, "%y%m%d").replace(tzinfo=ZoneInfo("Asia/Tokyo"))
 
-    if pipeline in ("arxiv", "all"):
-        run_arxiv_pipeline(date_jst)
-    if pipeline in ("aps", "all"):
-        run_aps_pipeline(date_jst)
-    if pipeline in ("nature", "all"):
-        run_nature_pipeline(date_jst)
-    if pipeline in ("chemrxiv", "all"):
-        run_chemrxiv_pipeline(date_jst)
+    pipelines: dict[str, Callable[[datetime], None]] = {
+        "arxiv": run_arxiv_pipeline,
+        "aps": run_aps_pipeline,
+        "nature": run_nature_pipeline,
+        "chemrxiv": run_chemrxiv_pipeline,
+    }
+    # Run every selected pipeline even if one fails, so the others still publish.
+    failed: list[str] = []
+    for name, run in pipelines.items():
+        if pipeline not in (name, "all"):
+            continue
+        try:
+            run(date_jst)
+        except Exception:
+            logging.exception(f"{name} pipeline failed.")
+            failed.append(name)
 
     tracker.log_summary()
+    if failed:
+        raise SystemExit(f"Failed pipelines: {', '.join(failed)}")
 
 
 if __name__ == "__main__":
